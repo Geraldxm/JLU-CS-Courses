@@ -1,0 +1,124 @@
+C51 COMPILER V7.08   DS18B20                                                               01/01/2013 01:11:33 PAGE 1   
+
+
+C51 COMPILER V7.08, COMPILATION OF MODULE DS18B20
+OBJECT MODULE PLACED IN .\output\ds18b20.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE user\ds18b20.c BROWSE INCDIR(D:\芮德华\EMCU\KEIL C51单片机实验(C语言版)\IO_
+                    -INPUT\INCLUDE\) DEBUG OBJECTEXTEND PRINT(.\list\ds18b20.lst) OBJECT(.\output\ds18b20.obj)
+
+line level    source
+
+   1          #include <reg51.h>
+   2          #include "delay.h"
+   3          #include "intrins.h"
+   4          #include "ds18b20.h"
+   5          
+   6          //  定义位变量DQ，作为与18B20通信的单总线
+   7          //  目前使用P0.0，可以根据需要自行修改
+   8          sbit            DQ = P0^0;                      
+   9          #define         DQ_H    DQ = 1;
+  10          #define         DQ_L    DQ = 0;
+  11          
+  12          /*
+  13          执行时间：约等于10*n微秒，当主频为12MHz的时候，增加一个nop
+  14          如果考虑到其他语句的执行，可以再减掉一个nop
+  15          */
+  16          
+  17          
+  18          
+  19          /*********************************************************************************************************
+             -*
+  20          函数名称：DS18B20初始化子程序
+  21          输入参数：无
+  22          输出参数：无
+  23          函数返回：无
+  24          **********************************************************************************************************
+             -/
+  25          
+  26          void reset_ds18b20(void){
+  27   1              DQ_H;                   //  DQ先置高
+  28   1              delay_10us(10);     //  延时
+  29   1              DQ_L;                   //  发送复位脉冲
+  30   1              delay_10us(60);     //  延时（480us - 960us)
+  31   1              DQ_H;                   //  拉高数据线
+  32   1              delay_10us(24);     //  DS18B20会产生应答脉冲，持续60-240us
+  33   1      }
+  34          
+  35          
+  36          /*********************************************************************************************************
+             -*
+  37          函数名称：写一字节数据到DS18B20
+  38          输入参数：数据
+  39          输出参数：无
+  40          函数返回：无
+  41          **********************************************************************************************************
+             -/
+  42          void writeByte_ds18b20(unsigned char dat){ 
+  43   1              unsigned char i=0;              
+  44   1              for (i = 8; i > 0; i--){
+  45   2                      //为避免判断的时间加入到时序中，将判断放到外面
+  46   2                      if(dat & 0x01)
+  47   2              {
+  48   3                              DQ_L;
+  49   3                              _nop_(); _nop_(); //延时 2us
+  50   3                  DQ_H;   //释放总线
+C51 COMPILER V7.08   DS18B20                                                               01/01/2013 01:11:33 PAGE 2   
+
+  51   3                              delay_10us(6);
+  52   3              }
+  53   2              else
+  54   2              {
+  55   3                              DQ_L;
+  56   3                              delay_10us(6);
+  57   3                  DQ_H;
+  58   3                              _nop_(); _nop_(); //延时 2us
+  59   3              }
+  60   2                      dat>>=1;
+  61   2              }
+  62   1              delay_10us(3);
+  63   1      }
+  64          /*********************************************************************************************************
+             -*
+  65          函数名称：从ds18b20读一字节数据函数
+  66          输入参数：无
+  67          输出参数：无
+  68          函数返回：读出的字节
+  69          **********************************************************************************************************
+             -/
+  70          
+  71          unsigned char readByte_ds18b20(void)                    
+  72          {
+  73   1              unsigned char i = 0;            
+  74   1              unsigned char dat = 0;
+  75   1              bit b;
+  76   1          //先读低位再读高位
+  77   1          for (i = 8; i > 0; i--)             
+  78   1              {
+  79   2                      DQ_L;
+  80   2                      _nop_(); _nop_(); //延时 2us
+  81   2                      DQ_H;  //释放总线
+  82   2                      dat >>= 1;  //必须在15us内读数据, 用这个表达式的时间占位
+  83   2                      b= DQ;
+  84   2      
+  85   2              if (DQ){
+  86   3                  dat|=0x80;
+  87   3              }
+  88   2      
+  89   2                      delay_10us(6);
+  90   2              }
+  91   1          return(dat);
+  92   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    125    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       4
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

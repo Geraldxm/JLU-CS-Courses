@@ -1,0 +1,7 @@
+“鲜花商店”中的购买库存鲜花
+1.main ownerBuy方法中部分代码
+	384行 
+	flowerList = flowerStore.getFlowersInstock(0);
+2.FlowerStoreServiceImpl getFlowersInstock中部分代码
+	166行
+        sql = "select * from flower where owner_id is null";

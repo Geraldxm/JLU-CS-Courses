@@ -1,0 +1,11 @@
+“鲜花商店”中的鲜花商店登录
+1.main storeLogin方法中的部分代码
+	95行
+	FlowerStoreService flowerStore = new FlowerStoreServiceImpl();
+	FlowerStore store = flowerStore.login();
+2.FlowerStoreServiceImpl subLogin方法中的部分代码
+        280行
+	FlowerStoreDao storeDao = new FlowerStoreDaoImpl();
+	String sql = "select * from flowerstore where name=? and password=?";
+	String[] param = { storeName, storePassword };
+	flowerStore = storeDao.getFlowerStore(sql, param);

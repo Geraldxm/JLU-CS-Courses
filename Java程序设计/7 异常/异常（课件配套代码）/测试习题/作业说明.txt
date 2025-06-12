@@ -1,0 +1,3 @@
+Person类中：TODO1：抛出异常"性别必须是“男”或者“女”！"
+	    TODO2：抛出异常"年龄必须在1到100之间！"
+TestException2类中：TODO3:设置person年龄为110，输出person并捕获异常

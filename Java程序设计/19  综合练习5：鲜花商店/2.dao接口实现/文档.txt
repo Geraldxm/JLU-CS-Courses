@@ -1,0 +1,58 @@
+“鲜花商店”中的dao接口实现
+1.FlowerDaoImpl getAllFlower方法中部分代码
+	36行
+	String preparedSql = "select id,name,typeName,owner_id,store_id,price from flower ";
+			conn = getConn(); // 得到数据库连接
+			pstmt = conn.prepareStatement(preparedSql); // 得到PreparedStatement对象
+			rs = pstmt.executeQuery(); // 执行SQL语句
+
+			while (rs.next()) {
+
+				Flower flower = new Flower();
+				flower.setId(rs.getInt(1));
+				flower.setName(rs.getString(2));
+				flower.setTypeName(rs.getString(3));
+				flower.setOwnerId(rs.getInt(4));
+				flower.setStoreId(rs.getInt(5));
+				flower.setPrice(rs.getDouble(6));
+				flowerList.add(flower);
+			}
+2.FlowerStoreDaoImpl 
+	getAllStore方法中部分代码
+        25行
+	String preparedSql = "select * from flowerstore ";
+		conn = getConn(); // 得到数据库连接
+		pstmt = conn.prepareStatement(preparedSql); // 得到PreparedStatement对象
+		rs = pstmt.executeQuery(); // 执行SQL语句
+			while (rs.next()) {
+				FlowerStore flowerStore = new FlowerStore();
+				flowerStore.setId(rs.getInt(1));
+				flowerStore.setName(rs.getString(2));
+				flowerStore.setPassword(rs.getString(3));
+				flowerStore.setBalance(rs.getDouble(4));
+				storeList.add(flowerStore);
+			}
+	getFlowerStore方法中部分代码
+        40行
+	conn = getConn(); // 得到数据库连接
+		pstmt = conn.prepareStatement(sql); // 得到PreparedStatement对象
+		if (param != null) {
+			for (int i = 0; i < param.length; i++) {
+				pstmt.setString(i + 1, param[i]); // 为预编译sql设置参数
+			}
+		}
+		rs = pstmt.executeQuery(); // 执行SQL语句
+			while (rs.next()) {
+				flowerStore = new FlowerStore();
+				flowerStore.setId(rs.getInt(1));
+				flowerStore.setName(rs.getString(2));
+				flowerStore.setPassword(rs.getString(3));
+				flowerStore.setBalance(rs.getDouble(4));
+			}
+	updateStore方法实现以及代码
+        52行
+	@Override
+	public int updateStore(String sql, Object[] param) {
+		int count = super.executeSQL(sql, param);
+		return count;
+	}

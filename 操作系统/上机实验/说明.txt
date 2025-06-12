@@ -1,0 +1,8 @@
+1、先安装VMvare Work Station 15.5
+2、将Debian压缩包解压都某个目录，如E:\Debian
+3、运行VMvare，打开E:\Debian中的扩展名为vmdx的文件
+4、启动这个虚拟机
+
+Username: debian
+Password : debian
+(to become root, use sudo su -)

@@ -1,0 +1,72 @@
+C51 COMPILER V7.08   CH451                                                                 11/13/2023 10:54:45 PAGE 1   
+
+
+C51 COMPILER V7.08, COMPILATION OF MODULE CH451
+OBJECT MODULE PLACED IN .\output\ch451.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE user\ch451.c BROWSE INCDIR(D:\芮德华\EMCU\KEIL C51单片机实验(C语言版)\IO_IN
+                    -PUT\INCLUDE\) DEBUG OBJECTEXTEND PRINT(.\list\ch451.lst) OBJECT(.\output\ch451.obj)
+
+line level    source
+
+   1          #include <reg51.h>
+   2          #include "ch451.h"
+   3          
+   4          sbit CH451_DOUT = P3^2; // DOUT INT0
+   5          sbit CH451_DIN = P1^1;  // DIN  SDA
+   6          sbit CH451_CLK = P1^2;  // DCLK SCL
+   7          sbit CH451_LOAD = P1^3; // LOAD PWM0
+   8          
+   9          void ch451_init(void)
+  10          {
+  11   1          CH451_DIN = 0; /*先低后高，选择4线输入*/
+  12   1          CH451_DIN = 1;
+  13   1          CH451_LOAD = 1;
+  14   1          CH451_CLK = 1;
+  15   1      }
+  16          
+  17          void ch451_write(unsigned int command)
+  18          {
+  19   1          unsigned char i;
+  20   1          CH451_LOAD=0; /*命令开始*/
+  21   1          for(i=0;i<12;i++)
+  22   1          {
+  23   2              CH451_DIN=command&1;
+  24   2              CH451_CLK=0;
+  25   2              CH451_CLK=1;
+  26   2              command>>=1; /*上升沿有效*/
+  27   2          }
+  28   1          CH451_LOAD=1; /*加载数据*/
+  29   1      }
+  30          
+  31          unsigned int ch451_read()
+  32          {
+  33   1              unsigned char key;
+  34   1              unsigned char i;
+  35   1              ch451_write(0x700);
+  36   1              key = 0;
+  37   1      
+  38   1              for(i=0;i<7;i++) //从CH451读出按键值
+  39   1              {
+  40   2                      key <<= 1;
+  41   2                      key |= CH451_DOUT;
+  42   2                      CH451_CLK = 0;
+  43   2                      CH451_CLK = 1;
+  44   2              }
+  45   1              return key;
+  46   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     66    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+C51 COMPILER V7.08   CH451                                                                 11/13/2023 10:54:45 PAGE 2   
+
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

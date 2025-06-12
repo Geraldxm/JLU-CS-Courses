@@ -1,0 +1,76 @@
+Type diskhead=MONITOR
+    Var busy:boolean;
+           headpos:0..199;
+           direction:(up,down);
+           cylinder:Array[0..199]Of condition;
+           count:Array[0..199]Of integer;
+    Define require, release;
+	
+    Procedure require(dest:0..199);
+        Begin
+            If busy Then
+                Begin 
+                    count[dest]:=count[dest]+1;
+                    wait(cylinder[dest])
+                End;
+            busy:=true;
+            If dest<headpos Then
+                direction:=down
+            Else If dest>headpos Then
+                        direction:=up;
+            headpos:=dest
+        End;      
+		
+   Procedure upscan;
+        Var I:0..200;
+        Begin
+            I:=headpos;
+            While (I<=199)and(count[I]=0) Do
+                I:=I+1;
+             If I<=199 Then
+                 Begin
+                     count[I]:=count[I]-1;
+                     signal(cylinder[I])
+                 End
+        End;
+
+	Procedure downscan;
+    Var I:-1..199;
+    Begin
+        I:=headpos;
+        While (I>=0)and(count[I]=0) Do
+            I:=I-1;
+         If I>=0 Then
+             Begin
+                 count[I]:=count[I]-1;
+                 signal(cylinder[I])
+             End
+    End;
+
+	Procedure release;
+    Begin
+        busy:=false;
+        If direction=up Then
+            Begin
+                 upscan; downscan
+            End
+        Else
+            Begin
+                 downscan; upscan
+            End
+    End;
+
+	Procedure initialize;
+    Var I: 0..199;
+    Begin
+         busy:=false;
+         headpos:=0;
+         direction:=up;
+         For I:=0 To 199 Do
+             count[I]:=0
+    End
+
+Begin 
+	initialize 
+End;    
+

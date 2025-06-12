@@ -1,0 +1,298 @@
+C51 COMPILER V7.08   MAIN                                                                  01/01/2013 05:36:33 PAGE 1   
+
+
+C51 COMPILER V7.08, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\output\main.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE user\main.c BROWSE INCDIR(D:\芮德华\EMCU\KEIL C51单片机实验(C语言版)\IO_INP
+                    -UT\INCLUDE\) DEBUG OBJECTEXTEND PRINT(.\list\main.lst) OBJECT(.\output\main.obj)
+
+line level    source
+
+   1          #include <reg51.h>
+   2          #include "main.h"
+   3          #include "delay.h"
+   4          #include "ch451.h"
+   5          #include "ds18b20.h"
+   6          
+   7          char flashDigit = 0;
+   8          sbit BUZZER1=P2^0;
+   9          sbit P20=P2^0;
+  10          unsigned int buz_cnt = 0;
+  11          bit flashFlag = 0;
+  12          bit buz_flag=0;
+  13          bit cnt_or_tmp = 0;
+  14          unsigned char dig4, dig3, dig2, dig1;
+  15          
+  16          // 显示倒计时
+  17          void printNum()
+  18          {
+  19   1              // 0-3位用作显示倒计时
+  20   1              ch451_write(CH451_DIG0 | dig1);
+  21   1              ch451_write(CH451_DIG1 | dig2);
+  22   1              ch451_write(CH451_DIG2 | (dig3+128)); //点号
+  23   1              ch451_write(CH451_DIG3 | dig4);
+  24   1      
+  25   1              if(flashDigit > 0 && flashFlag)
+  26   1              // DIG3 通过加上位数*0x0100来选择显示的数码管是哪个，或27表示不显示
+  27   1              // flashFlag 翻转，实现闪烁
+  28   1                      ch451_write((0x0700 + flashDigit * 0x0100) | 27);
+  29   1              flashFlag = !flashFlag;
+  30   1      
+  31   1              // 高位清空不显示
+  32   1              ch451_write(CH451_DIG4 | 27);
+  33   1              ch451_write(CH451_DIG5 | 27);
+  34   1              ch451_write(CH451_DIG6 | 27);
+  35   1              ch451_write(CH451_DIG7 | 27);
+  36   1      }
+  37          
+  38          void printTemperature(unsigned int temp)
+  39          {
+  40   1              // 0-3位用作显示温度
+  41   1              unsigned char digit;
+  42   1              
+  43   1              digit = temp % 10;
+  44   1              ch451_write(CH451_DIG0 | digit);
+  45   1              digit = (temp/=10) % 10;
+  46   1              ch451_write(CH451_DIG1 | (digit + 128));        // 点号
+  47   1              digit = (temp/=10) % 10;
+  48   1              ch451_write(CH451_DIG2 | digit);
+  49   1              
+  50   1              // 高位清空不显示
+  51   1              ch451_write(CH451_DIG3 | 27);
+  52   1              ch451_write(CH451_DIG4 | 27);
+  53   1              ch451_write(CH451_DIG5 | 27);
+  54   1              ch451_write(CH451_DIG6 | 27);
+C51 COMPILER V7.08   MAIN                                                                  01/01/2013 05:36:33 PAGE 2   
+
+  55   1              ch451_write(CH451_DIG7 | 27);
+  56   1      }
+  57          
+  58          // 重置DS18B20
+  59          void startTemperature(void){
+  60   1              reset_ds18b20();
+  61   1              delay_ms(1);
+  62   1              writeByte_ds18b20(0xCC);
+  63   1              writeByte_ds18b20(0x44);
+  64   1      }
+  65          
+  66          unsigned int readTemperature(void){
+  67   1              unsigned int tempInt;
+  68   1              float tempFloat;
+  69   1              unsigned char a, b;
+  70   1      
+  71   1              reset_ds18b20();
+  72   1              delay_ms(1);
+  73   1              writeByte_ds18b20(0xCC);
+  74   1              writeByte_ds18b20(0xBE);
+  75   1              a = readByte_ds18b20();
+  76   1              b = readByte_ds18b20();
+  77   1              tempInt = b;
+  78   1              tempInt <<= 8;
+  79   1              tempInt = tempInt | a;
+  80   1              tempFloat = tempInt * 0.0625;
+  81   1              tempInt = tempFloat * 10 + 0.5;
+  82   1              return tempInt;
+  83   1      }
+  84          
+  85          unsigned int seconds;
+  86          unsigned int displayNum;
+  87          unsigned char count;
+  88          bit paused = 0;
+  89          
+  90          unsigned int BEEP1;
+  91          
+  92          #define TIMER_PRESET_VALUE 50000  // 1/1000000 s = 1us, 50000us = 50ms
+  93          #define TIMER_1_INT 10000       // 10ms
+  94          
+  95          void timer0_ISR(void) interrupt 1 
+  96          {       
+  97   1              count += 1;
+  98   1              
+  99   1              // 每秒进入一次，更新秒数
+ 100   1              if(count % 20 == 0)
+ 101   1              {
+ 102   2                      if(!paused)
+ 103   2                      {
+ 104   3                              
+ 105   3                              if(seconds > 0)
+ 106   3                              {
+ 107   4                                      seconds -= 1;
+ 108   4                                      // 倒计时到0，置buz_flag为1
+ 109   4                                      if (seconds == 0)
+ 110   4                                              buz_flag = 1;
+ 111   4                              }
+ 112   3                              
+ 113   3                              dig4 = seconds / 600 % 10;
+ 114   3                              dig3 = seconds / 60 % 10;
+ 115   3                              dig2 = seconds % 60 / 10;
+ 116   3                              dig1 = seconds % 10;
+C51 COMPILER V7.08   MAIN                                                                  01/01/2013 05:36:33 PAGE 3   
+
+ 117   3                      }
+ 118   2              }
+ 119   1      
+ 120   1              // 通过cnt_or_tmp判断显示温度还是倒计时，用于显示
+ 121   1              if(count % 8 == 0)
+ 122   1              {
+ 123   2                      if (cnt_or_tmp)
+ 124   2                              // 显示倒计时
+ 125   2                              printNum();
+ 126   2                      else
+ 127   2                              // 显示温度
+ 128   2                              printTemperature(readTemperature());
+ 129   2              }
+ 130   1      
+ 131   1      
+ 132   1              // 倒计时到0，且flag为1
+ 133   1              // 此时开启蜂鸣器
+ 134   1              if (seconds == 0 && buz_flag == 1)
+ 135   1              {               
+ 136   2                      P20=1;  // 打开蜂鸣器，P20高电平，计数到三秒后重设为低电平
+ 137   2                      buz_flag = 0;   // 进入后马上清除flag，否则会重复进入该if语句
+ 138   2                      buz_cnt = 1;
+ 139   2              }
+ 140   1              
+ 141   1              // 蜂鸣器计数，计数到3000/50=60次，即3秒后关闭蜂鸣器，重置
+ 142   1              if (buz_cnt > 0)
+ 143   1              {
+ 144   2                      buz_cnt++;
+ 145   2                      if (buz_cnt==60)
+ 146   2                      {
+ 147   3                              P20=0;  // 关闭蜂鸣器
+ 148   3                              buz_cnt=0;      // 重置计数
+ 149   3                      }
+ 150   2              }
+ 151   1              
+ 152   1              // 重设
+ 153   1              TH0 = (65536 - TIMER_PRESET_VALUE) / 256; // 设置定时器的高字节
+ 154   1              TL0 = (65536 - TIMER_PRESET_VALUE) % 256; // 设置定时器的低字节
+ 155   1      }
+ 156          
+ 157          
+ 158          // 按下键盘中断
+ 159          bit setTimeMode = 0;
+ 160          void keydown(void) interrupt 0
+ 161          {
+ 162   1              unsigned char key;
+ 163   1              unsigned char num;
+ 164   1              
+ 165   1              EA = 0;
+ 166   1              key = ch451_read();
+ 167   1              EA = 1;
+ 168   1      
+ 169   1              // 开始设置 / 重置输入
+ 170   1              if(key == KEY_16)
+ 171   1              {
+ 172   2                      setTimeMode = 1;
+ 173   2                      paused = 1;
+ 174   2                      flashDigit = 4;
+ 175   2              }
+ 176   1              // 设置完毕
+ 177   1              else if(key == KEY_15)
+ 178   1              {
+C51 COMPILER V7.08   MAIN                                                                  01/01/2013 05:36:33 PAGE 4   
+
+ 179   2                      seconds = dig4 * 600 + dig3 * 60 + dig2 * 10 + dig1;
+ 180   2                      setTimeMode = 0;        // 结束设置时间
+ 181   2                      paused = 0;             // 开始计时
+ 182   2                      flashDigit = 0; // 闪烁位清零，不再闪烁
+ 183   2      
+ 184   2                      buz_flag=0;     // 重置flag
+ 185   2              }
+ 186   1              // PAUSE/RUN
+ 187   1              else if(key == KEY_13 && !setTimeMode)  // 按下KEY_13且在 非设置时间模式
+ 188   1              {
+ 189   2                      paused = !paused;
+ 190   2              }
+ 191   1              else if (key == KEY_12) // 切换cnt_or_tmp，显示温度或者倒计时
+ 192   1              {
+ 193   2                      cnt_or_tmp = !cnt_or_tmp;
+ 194   2              }
+ 195   1              else    // 数字键, KEY1/2/3/5/6/7/9/10/11/14
+ 196   1              {
+ 197   2                      if(setTimeMode)
+ 198   2                      {
+ 199   3                              if(key == KEY_1)num=7;
+ 200   3                              else if(key == KEY_2)num=8;
+ 201   3                              else if(key == KEY_3)num=9;
+ 202   3                              else if(key == KEY_5)num=4;
+ 203   3                              else if(key == KEY_6)num=5;
+ 204   3                              else if(key == KEY_7)num=6;
+ 205   3                              else if(key == KEY_9)num=1;
+ 206   3                              else if(key == KEY_10)num=2;
+ 207   3                              else if(key == KEY_11)num=3;
+ 208   3                              else if(key == KEY_14)num=0;
+ 209   3                              else return;
+ 210   3              
+ 211   3                              if(flashDigit == 4)
+ 212   3                                      dig4 = num;
+ 213   3                              if(flashDigit == 3)
+ 214   3                                      dig3 = num;
+ 215   3                              if(flashDigit == 2)
+ 216   3                              {
+ 217   4                                      if(num >= 6) num = 5;   // 限制秒的高位，最大为5
+ 218   4                                      dig2 = num;
+ 219   4                              }
+ 220   3                              if(flashDigit == 1)     // 秒的低位
+ 221   3                                      dig1 = num;
+ 222   3                              // 闪烁位递减
+ 223   3                              flashDigit = flashDigit > 1 ? flashDigit-1 : 4;
+ 224   3                      }
+ 225   2              }
+ 226   1      }
+ 227          
+ 228          void main(void)
+ 229          {
+ 230   1              // 初始化buz_flag, buz_cnt, P20
+ 231   1              buz_cnt = 0;
+ 232   1              buz_flag = 0;
+ 233   1              P20=0;
+ 234   1      
+ 235   1              ch451_write(0x201);
+ 236   1          ch451_init();
+ 237   1          // 系统参数设定：显示驱动使能，键盘扫描使能，其余默认
+ 238   1          ch451_write(0x403);
+ 239   1          // 显示参数设定：选择 BCD 译码方式，其余默认
+ 240   1          ch451_write(0x580);
+C51 COMPILER V7.08   MAIN                                                                  01/01/2013 05:36:33 PAGE 5   
+
+ 241   1      
+ 242   1              // 设置定时器的工作模式和预设值
+ 243   1      
+ 244   1              TMOD = 0x11;
+ 245   1      
+ 246   1              TH0 = (65536 - TIMER_PRESET_VALUE) / 256; // 设置定时器的高字节
+ 247   1              TL0 = (65536 - TIMER_PRESET_VALUE) % 256; // 设置定时器的低字节
+ 248   1      
+ 249   1              // 开启定时器并使能定时器中断
+ 250   1              TR0 = 1;        // 开启定时器
+ 251   1              ET0 = 1;        // enable timer0 int
+ 252   1              IT0 = 0;        // 低电平触发
+ 253   1          EX0 = 1;    // enable timer0 int
+ 254   1              
+ 255   1              EA = 1; //      开总中断
+ 256   1              
+ 257   1      
+ 258   1              
+ 259   1              while(1)
+ 260   1              {
+ 261   2                      startTemperature();
+ 262   2                      delay_ms(1000);
+ 263   2                      //printTemperature(readTemperature());
+ 264   2              }
+ 265   1      }
+ 266          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    948    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     14       8
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      5    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,17 @@
+“鲜花商店”中的卖出鲜花给商店
+1.main ownerSell方法中部分代码
+	391行 
+	FlowerStoreDao storeDao = new FlowerStoreDaoImpl();
+	storeList = storeDao.getAllStore();
+	402行
+	flower.setStoreId(flowerStore.getId());
+	owner.sell(flower);
+2.FlowerOwnerServiceImpl sell方法中两处代码
+	51行
+	String updateStore = "update flowerstore set balance=? where id=?";
+	Object[] storeParam = { (flowerStore.getBalance() -flower.getPrice()),flowerStore.getId()};
+	FlowerStoreDaoImpl storeDao = new FlowerStoreDaoImpl();
+	int updatestore = storeDao.executeSQL(updateStore, storeParam);
+	74行
+	AccountDao accountDao = new AccountDaoImpl();
+	int insertAccount = accountDao.updateAccount(insertsql,accountParam);

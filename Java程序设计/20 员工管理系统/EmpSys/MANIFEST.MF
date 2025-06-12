@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Main-Class: com.nciae.empsys.view.LoginFrame
+SplashScreen-Image: res/splash.jpg
+Class-Path: lib/mysql-connector-java-5.1.25-bin.jar

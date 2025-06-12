@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="zh-CN">
+  <head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src chrome:; object-src 'none'" />
+    <title>页面载入出错</title>
+    <link rel="stylesheet" href="chrome://browser/skin/aboutNetError.css" type="text/css" media="all" />
+    <!-- If the location of the favicon is changed here, the FAVICON_ERRORPAGE_URL symbol in
+         toolkit/components/places/src/nsFaviconService.h should be updated. -->
+    <link rel="icon" id="favicon" href="chrome://global/skin/icons/warning.svg" />
+    <link rel="localization" href="browser/aboutCertError.ftl" />
+    <link rel="localization" href="browser/nsserrors.ftl" />
+    <link rel="localization" href="branding/brand.ftl" />
+  </head>
+
+  <body dir="ltr" class="illustrated netTimeout neterror">
+    <!-- ERROR ITEM CONTAINER (removed during loading to avoid bug 39098) -->
+    
+
+    <!-- PAGE CONTAINER (for styling purposes only) -->
+    <div id="errorPageContainer" class="container">
+      <div id="text-container">
+        <!-- Error Title -->
+        <div class="title">
+          <h1 class="title-text">连接超时</h1>
+        </div>
+
+        <!-- LONG CONTENT (the section most likely to require scrolling) -->
+        <div id="errorLongContent">
+
+          <!-- Short Description -->
+          <div id="errorShortDesc">
+            <p id="errorShortDescText">s.cpro.baidu.com 的服务器响应时间过长。</p>
+          </div>
+
+          <div id="errorShortDesc2">
+              <p id="errorShortDescText2"></p>
+          </div>
+
+          <div id="errorWhatToDoTitle">
+              <p id="errorWhatToDoTitleText"></p>
+          </div>
+
+          <div id="errorWhatToDo">
+              <p id="badStsCertExplanation" hidden="true"><span class="hostname"></span> 启用了被称为 HTTP 严格传输安全（HSTS）的安全策略，Firefox 只能与其建立安全连接。您无法为此网站添加例外，以访问此网站。</p>
+              <p id="errorWhatToDoText"></p>
+          </div>
+
+          <div id="errorWhatToDo2">
+              <p id="errorWhatToDoText2"></p>
+              <p id="badStsCertExplanation" hidden="true"><span class="hostname"></span> 启用了被称为 HTTP 严格传输安全（HSTS）的安全策略，Firefox 只能与其建立安全连接。您无法为此网站添加例外，以访问此网站。</p>
+          </div>
+
+          <!-- Long Description (Note: See netError.dtd for used XHTML tags) -->
+          <div id="errorLongDesc"><ul xmlns="http://www.w3.org/1999/xhtml"> 
+<li>此站点暂时无法使用或者太过忙碌。请过几分钟后再试。</li> 
+<li>如果您无法载入任何网页，请检查您计算机的网络连接状态。</li> 
+<li>如果您的计算机或网络受到防火墙或者代理服务器的保护，请确认 Firefox 已被授权访问网络。</li>
+</ul></div>
+
+          <div id="learnMoreContainer">
+            <p><a id="learnMoreLink" target="new" href="https://support.mozilla.org/1/firefox/74.0/WINNT/zh-CN/connection-not-secure">详细了解…</a></p>
+          </div>
+        </div>
+
+        <!-- UI to temporarily re-enable TLS 1.0 and 1.1.
+             This should be removed after March 2020, see bug 1579285.  -->
+        <div id="enableTls10Container" class="button-container">
+          <p>此网站可能不支持 TLS 1.2 协议，该协议现为 Firefox 的最低支持版本。启用 TLS 1.0 和 TLS 1.1 可能会成功连接。</p>
+          <p>未来的版本中将永久禁用 TLS 1.0 和 TLS 1.1。</p>
+          <button id="enableTls10Button" class="primary">启用 TLS 1.0 和 1.1</button>
+        </div>
+
+        <!-- UI for option to report certificate errors to Mozilla. Removed on
+             init for other error types .-->
+        <div id="prefChangeContainer" class="button-container">
+          <p>看来可能是您的网络安全设置造成了此问题。您想还原到默认设置吗？</p>
+          <button id="prefResetButton" class="primary">恢复默认设置</button>
+        </div>
+
+        <div id="certErrorAndCaptivePortalButtonContainer" class="button-container">
+          <button id="returnButton" class="primary">返回上一页（推荐）</button>
+          <button id="openPortalLoginPageButton" class="primary">打开网络登录页面</button>
+          <button class="primary try-again">重试</button>
+          <button id="advancedButton">高级…</button>
+        </div>
+      </div>
+
+      <div id="netErrorButtonContainer" class="button-container">
+        <button class="primary try-again">重试</button>
+      </div>
+
+      <div id="advancedPanelContainer">
+        <div id="badCertAdvancedPanel" class="advanced-panel">
+          <p id="badCertTechnicalInfo"></p>
+          <a id="viewCertificate" href="javascript:void(0)">查看证书</a>
+          <div id="advancedPanelButtonContainer" class="button-container">
+            <button id="advancedPanelReturnButton" class="primary">返回上一页（推荐）</button>
+            <button class="primary try-again">重试</button>
+            <div class="exceptionDialogButtonContainer">
+              <button id="exceptionDialogButton">接受风险并继续</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="certificateErrorReporting">
+            <p class="toggle-container-with-text">
+                <input type="checkbox" id="automaticallyReportInFuture" role="checkbox" />
+                <label for="automaticallyReportInFuture">报告此类错误，帮助 Mozilla 识别与拦截恶意网站</label>
+            </p>
+        </div>
+
+        <div id="certificateErrorDebugInformation">
+          <button id="copyToClipboardTop">复制文本到剪贴板</button>
+          <div id="certificateErrorText"></div>
+          <button id="copyToClipboardBottom">复制文本到剪贴板</button>
+        </div>
+      </div>
+    </div>
+  </body>
+  <script src="chrome://browser/content/aboutNetError.js"></script>
+</html>

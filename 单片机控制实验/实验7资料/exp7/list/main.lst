@@ -1,0 +1,144 @@
+C51 COMPILER V7.08   MAIN                                                                  11/27/2023 11:04:22 PAGE 1   
+
+
+C51 COMPILER V7.08, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\output\main.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE user\main.c BROWSE INCDIR(D:\芮德华\EMCU\KEIL C51单片机实验(C语言版)\IO_INP
+                    -UT\INCLUDE\) DEBUG OBJECTEXTEND PRINT(.\list\main.lst) OBJECT(.\output\main.obj)
+
+line level    source
+
+   1          #include <reg51.h>
+   2          #include <intrins.h>
+   3          #include <stdio.h>
+   4          #include "st7920.h"
+   5          #include "tlc2543.h"
+   6          #include "delay.h"
+   7          #include "math.h"
+   8          
+   9          #define MAX_SPEED 130
+  10          #define M 100
+  11          
+  12          int motorCount;
+  13          int targetSpeed;
+  14          int motorSpeed;
+  15          sbit motorDrive = P0^5;
+  16          
+  17          unsigned int N; // 越大转越快
+  18          
+  19          unsigned int calcN()
+  20          {
+  21   1              static float Kp = 1.0, Ki = 0.1, Kd = 0.05;
+  22   1              static float integral = 0, last_error = 0;
+  23   1              float error, derivative, output;
+  24   1              // return 100;
+  25   1              error = targetSpeed - motorSpeed;
+  26   1              integral += error;
+  27   1              derivative = error - last_error;
+  28   1              output = Kp * error + Ki * integral + Kd * derivative;
+  29   1              last_error = error;
+  30   1              
+  31   1              if(output>1) output = 1;
+  32   1              if(output<0) output = 0;
+  33   1              return (unsigned int) (M * output);
+  34   1      }
+  35          
+  36          #define TIMER_PRESET_VALUE 50000
+  37          // 定时器中断服务函数
+  38          void timerISR(void) interrupt 1 
+  39          {       
+  40   1              char printText[16];
+  41   1              static unsigned char count = 0;
+  42   1              static unsigned char S = 0;
+  43   1              static int speedDiff;
+  44   1      
+  45   1              count += 1;
+  46   1              S += N;
+  47   1              if(S > M)
+  48   1              {
+  49   2                      motorDrive = 0;
+  50   2                      S -= M;
+  51   2              }
+  52   1              else
+  53   1              {
+  54   2                      motorDrive = 1;
+C51 COMPILER V7.08   MAIN                                                                  11/27/2023 11:04:22 PAGE 2   
+
+  55   2              }
+  56   1      
+  57   1              // 每秒钟
+  58   1              if(count % 5 == 0)
+  59   1              {
+  60   2                      motorSpeed = motorCount * 4;
+  61   2                      motorCount = 0;
+  62   2      
+  63   2                      N = calcN();
+  64   2      
+  65   2      
+  66   2                      sprintf(printText, "目标转速 %3d r/s", targetSpeed);
+  67   2                      LCD_write_string(1 << 8, printText);
+  68   2                      sprintf(printText, "实时转速 %3d r/s", motorSpeed);
+  69   2                      LCD_write_string(2 << 8, printText);
+  70   2                      sprintf(printText, "  参数N   %3d   ", N);
+  71   2                      LCD_write_string(3 << 8, printText);
+  72   2              }
+  73   1      
+  74   1              TH0 = (65536 - TIMER_PRESET_VALUE) / 256; // 设置定时器的高字节
+  75   1              TL0 = (65536 - TIMER_PRESET_VALUE) % 256; // 设置定时器的低字节
+  76   1      }
+*** WARNING C280 IN LINE 43 OF USER\MAIN.C: 'speedDiff': unreferenced local variable
+  77          
+  78          void motorISR(void) interrupt 0 using 0
+  79          {
+  80   1              motorCount = motorCount + 1;
+  81   1      }
+  82          
+  83          int main()
+  84          {
+  85   1              unsigned int value;
+  86   1      
+  87   1              // 设置定时器的工作模式和预设值
+  88   1              TMOD = 0x01; // 定时器0工作在模式1
+  89   1              TH0 = (65536 - TIMER_PRESET_VALUE) / 256; // 设置定时器的高字节
+  90   1              TL0 = (65536 - TIMER_PRESET_VALUE) % 256; // 设置定时器的低字节
+  91   1              
+  92   1              // 开启定时器并使能定时器中断
+  93   1              TR0 = 1;
+  94   1              ET0 = 1;
+  95   1      
+  96   1              IT0 = 1; // 外部中断0为低电平触发
+  97   1          EX0 = 1; // 开EX0中断
+  98   1              
+  99   1              EA = 1;
+ 100   1      
+ 101   1              LCD_init();
+ 102   1              LCD_write_string(0 << 8,"实验7   电机驱动");
+ 103   1              LCD_write_string(1 << 8,"目标转速 000 r/s");
+ 104   1              LCD_write_string(2 << 8,"实时转速 000 r/s");
+ 105   1              LCD_write_string(3 << 8,"    运行中      ");
+ 106   1      
+ 107   1              while(1)
+ 108   1              {
+ 109   2                      value = read2543(0);
+ 110   2                      value = value > 4000 ? 4000 : value;
+ 111   2                      targetSpeed = value / 4000.0 * MAX_SPEED; 
+ 112   2              }
+ 113   1      
+ 114   1              return 0;
+ 115   1      }
+C51 COMPILER V7.08   MAIN                                                                  11/27/2023 11:04:22 PAGE 3   
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    671    ----
+   CONSTANT SIZE    =    119    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     32      30
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)

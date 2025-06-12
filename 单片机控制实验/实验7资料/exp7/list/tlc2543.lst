@@ -1,0 +1,58 @@
+C51 COMPILER V7.08   TLC2543                                                               11/27/2023 11:04:22 PAGE 1   
+
+
+C51 COMPILER V7.08, COMPILATION OF MODULE TLC2543
+OBJECT MODULE PLACED IN .\output\tlc2543.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE user\tlc2543.c BROWSE INCDIR(D:\芮德华\EMCU\KEIL C51单片机实验(C语言版)\IO_
+                    -INPUT\INCLUDE\) DEBUG OBJECTEXTEND PRINT(.\list\tlc2543.lst) OBJECT(.\output\tlc2543.obj)
+
+line level    source
+
+   1          #include <reg51.h>
+   2          #include "tlc2543.h"
+   3          #include "delay.h"
+   4          
+   5          sbit DIN = P0^0; // 数据输入信号线
+   6          sbit DOUT = P0^1; // 数据输出信号线
+   7          sbit CS = P0^2; // 片选信号线
+   8          sbit CLK = P0^3; // 时钟信号线
+   9          sbit EOC = P0^4; // 时钟信号线
+  10          
+  11          unsigned int read2543(unsigned char port)
+  12          {
+  13   1          unsigned int ad = 0, i;
+  14   1          CLK = 0;
+  15   1          CS  = 0;
+  16   1          port <<= 4; // 选通道。高四位代表AD通道，低四位自动补0
+  17   1      
+  18   1          for (i = 0; i < 12; i++ ) //进行12次（12位）的数据推送
+  19   1          {
+  20   2              if (DOUT)
+  21   2                  ad |= 0x01;             // 相当于每次检出输出1时。最低位就给1，否则给0
+  22   2              DIN     = (bit) (port & 0x80);
+  23   2              CLK     = 1;
+  24   2              delay_10us(3);
+  25   2              CLK = 0;
+  26   2              delay_10us(3);
+  27   2              port <<= 1;
+  28   2              ad <<= 1;
+  29   2          }
+  30   1          CS = 1;
+  31   1          ad >>= 1;
+  32   1              while(!EOC);
+  33   1          return (ad);
+  34   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    103    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       5
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

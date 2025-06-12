@@ -1,0 +1,19 @@
+“鲜花商店”中的service接口实现
+1.FlowerOwnerServiceImpl 
+	getMyFlower方法代码
+	129行
+	List<Flower> flowerList = new ArrayList<Flower>();
+		String sql = "select * from flower where owner_id=?";
+		String[] param = { String.valueOf(ownerId) };
+		FlowerDao petDao = new FlowerDaoImpl();
+		flowerList = petDao.selectFlower(sql, param);
+		return flowerList;
+2.FlowerStoreServiceImpl getFlowerStore方法实现以及代码
+	291行
+	@Override
+	public FlowerStore getFlowerStore(long id) {
+		String sql = "select * from flowerstore where id=" + id;
+		FlowerStoreDao storeDao = new FlowerStoreDaoImpl();
+		FlowerStore flowerStore = storeDao.getFlowerStore(sql, null);
+		return flowerStore;
+	}

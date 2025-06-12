@@ -1,0 +1,48 @@
+<html>
+<body>
+<pre>
+<h1>礦ision2 Build Log</h1>
+<h2>Project:</h2>
+H:\实验5资料\exp5 - 副本\IO_OUTPUT.uv2
+Project File Date:  08/28/2024
+
+<h2>Output:</h2>
+Build target 'Target 1'
+compiling main.c...
+linking...
+*** WARNING L15: MULTIPLE CALL TO SEGMENT
+    SEGMENT: ?PR?_WRITEBYTE_DS18B20?DS18B20
+    CALLER1: ?PR?TIMER0_ISR?MAIN
+    CALLER2: ?C_C51STARTUP
+Program Size: data=33.6 xdata=0 code=2156
+creating hex file from ".\output\IO_OUTPUT"...
+".\output\IO_OUTPUT" - 0 Error(s), 1 Warning(s).
+Build target 'Target 1'
+linking...
+*** WARNING L15: MULTIPLE CALL TO SEGMENT
+    SEGMENT: ?PR?_WRITEBYTE_DS18B20?DS18B20
+    CALLER1: ?PR?TIMER0_ISR?MAIN
+    CALLER2: ?C_C51STARTUP
+Program Size: data=33.6 xdata=0 code=2156
+creating hex file from ".\output\IO_OUTPUT"...
+".\output\IO_OUTPUT" - 0 Error(s), 1 Warning(s).
+Build target 'Target 1'
+compiling main.c...
+linking...
+*** WARNING L15: MULTIPLE CALL TO SEGMENT
+    SEGMENT: ?PR?_WRITEBYTE_DS18B20?DS18B20
+    CALLER1: ?PR?TIMER0_ISR?MAIN
+    CALLER2: ?C_C51STARTUP
+Program Size: data=33.6 xdata=0 code=2156
+creating hex file from ".\output\IO_OUTPUT"...
+".\output\IO_OUTPUT" - 0 Error(s), 1 Warning(s).
+Build target 'Target 1'
+compiling main.c...
+linking...
+*** WARNING L15: MULTIPLE CALL TO SEGMENT
+    SEGMENT: ?PR?_WRITEBYTE_DS18B20?DS18B20
+    CALLER1: ?PR?TIMER0_ISR?MAIN
+    CALLER2: ?C_C51STARTUP
+Program Size: data=33.6 xdata=0 code=2165
+creating hex file from ".\output\IO_OUTPUT"...
+".\output\IO_OUTPUT" - 0 Error(s), 1 Warning(s).

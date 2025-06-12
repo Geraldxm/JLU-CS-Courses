@@ -1,0 +1,44 @@
+C51 COMPILER V7.08   DELAY                                                                 11/27/2023 11:04:22 PAGE 1   
+
+
+C51 COMPILER V7.08, COMPILATION OF MODULE DELAY
+OBJECT MODULE PLACED IN .\output\delay.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE user\delay.c BROWSE INCDIR(D:\芮德华\EMCU\KEIL C51单片机实验(C语言版)\IO_IN
+                    -PUT\INCLUDE\) DEBUG OBJECTEXTEND PRINT(.\list\delay.lst) OBJECT(.\output\delay.obj)
+
+line level    source
+
+   1          #include "delay.h"
+   2          #include "intrins.h"
+   3          
+   4          void delay_ms(unsigned int t) 
+   5          {  
+   6   1              unsigned int i; 
+   7   1              unsigned char j; 
+   8   1              for(i=0;i<t;i++) 
+   9   1              {  
+  10   2                      for(j=0;j<200;j++); 
+  11   2                      for(j=0;j<102;j++); 
+  12   2              } 
+  13   1      }
+  14          void delay_10us(unsigned char n){
+  15   1              unsigned char i;
+  16   1              for(i=n; i>0; --i){
+  17   2                      _nop_();
+  18   2                      //_nop_(); //主频为12MHz
+  19   2              }
+  20   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     41    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

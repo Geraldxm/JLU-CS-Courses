@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="src" path="src/main/java"/>
+	<classpathentry kind="lib" path="lib/gson-2.8.2.jar"/>
+	<classpathentry kind="lib" path="lib/sqlite-jdbc-3.23.1.jar"/>
+	<classpathentry kind="lib" path="lib/mysql-connector-java-5.1.0-bin.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

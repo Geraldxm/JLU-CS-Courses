@@ -1,0 +1,289 @@
+#include<iostream>
+#include<cstdio>
+using namespace std;
+template <typename T>
+class Node
+{
+public:
+	T data;
+	Node* nxt = nullptr;
+	Node* prev = nullptr;
+};
+template <typename T>
+class TNode
+{
+public:
+	T data;
+	TNode* left = nullptr;
+	TNode* right = nullptr;
+	TNode* father = nullptr;
+	TNode* firstChild = nullptr;
+	TNode* nextBrother = nullptr;
+	int leftThread = 0, rightThread = 0;
+	int depth = 0;
+};
+template <typename T>
+class myDeque
+{
+private:
+	Node<T>* head;
+	Node<T>* tail;
+	int length;		//记录队列内成员个数
+public:
+	myDeque()
+	{
+		head = new Node<T>;
+		tail = head;
+		head->nxt = nullptr;
+		head->prev = nullptr;
+		length = 0;
+	}
+	//析构函数
+	~myDeque()
+	{
+		while (head != tail)
+		{
+			Node<T>* p = head;
+			head = head->nxt;
+			delete p;
+		}
+		delete head;
+		head = nullptr;
+		tail = nullptr;
+	}
+	myDeque(const myDeque& o) = delete;
+	myDeque& operator=(const myDeque& o) = delete;
+	//下面为其他成员函数
+	bool isEmpty()
+	{
+		if (length == 0) return true;
+		else return false;
+	}
+	void clear()
+	{
+		while (head != tail)
+		{
+			Node<T>* p = head;
+			head = head->nxt;
+			delete p;
+		}
+		delete head;
+		head = new Node<T>;
+		tail = head;
+		head->nxt = nullptr;
+		length = 0;
+	}
+	void push(const T x)
+	{
+		Node<T>* p = new Node<T>;
+		p->data = x;
+		p->nxt = nullptr;
+		p->prev = tail;
+		tail->nxt = p;
+		tail = p;
+		length++;
+	}
+	void pushForward(const T x)
+	{
+		Node<T>* p = new Node<T>;
+		p->data = x;
+		p->nxt = head->nxt;
+		head->nxt->prev = p;
+		p->prev = head;
+		head->nxt = p;
+		length++;
+	}
+	T pop()
+	{
+		Node<T>* p = head;
+		if (this->isEmpty())
+		{
+			cout << "empty deque, can not pop!\n" << endl;
+			exit(0);
+		}
+		head = head->nxt;
+		head->prev = nullptr;
+		T temp = head->data;	//注意，旧head中没有内容（或为无效内容），旧head是哨兵，现在弹出旧head，使新head为哨兵，所需数据在新head
+		delete p;
+		length--;
+		return temp;
+	}
+	T popBack()
+	{
+		Node<T>* p = tail;
+		if (this->isEmpty())
+		{
+			cout << "empty deque, can not pop!\n" << endl;
+			exit(0);
+		}
+		T temp = tail->data;
+		tail->prev->nxt = nullptr;
+		tail = tail->prev;
+		delete p;
+		length--;
+		return temp;
+
+	}
+	int getLength()
+	{
+		return this->length;
+	}
+	T getHead()
+	{
+		if (!this->isEmpty())
+			return head->nxt->data;
+		else {
+			cout << "empty deque, can not read head!\n" << endl;
+			exit(0);
+		}
+	}
+	T getTail()
+	{
+		return tail->data;
+	}
+};
+int a[300050] = { 0 };//节点个数不超过200000，因为有空结点，所以应当*2
+int b[150050] = { 0 };//并查集，用来记载父亲节点
+int c[150050] = { 0 };//用来保存每个节点的深度，便于查找
+TNode<int>* d[150050];//用来保存每个节点的指针
+void CBT_int_Pre(int a[], int len, TNode<int>*& rot, int& i, int h)
+{
+	if (i <= len - 1)
+	{
+		i++;
+		if (a[i] == 0) {
+			delete rot;
+			rot = nullptr;
+			return;
+		}
+		if (rot == nullptr) return;
+		//当前节点的位置记录其父亲节点的值
+		rot->data = a[i];
+		if (h!=0)	//当h不为零时
+			b[rot->data] = rot->father->data;
+		d[rot->data] = rot;
+		c[a[i]] = h;
+		rot->depth = h;
+		TNode<int>* lf = new TNode<int>;
+		TNode<int>* rt = new TNode<int>;
+		rot->left = lf;
+		lf->left = nullptr;
+		lf->right = nullptr;
+		lf->father = rot;
+		rot->right = rt;
+		rt->left = nullptr;
+		rt->right = nullptr;
+		rt->father = rot;
+		CBT_int_Pre(a, len, rot->left, i, h + 1);
+		CBT_int_Pre(a, len, rot->right, i, h + 1);
+	}
+	else return;
+}
+int findfather(int x, int y)
+{
+	int hx = c[x];
+	int hy = c[y];
+	int minh, maxh, minnum, maxnum;
+	if (hx > hy)
+	{
+		maxh = hx;
+		minh = hy;
+		minnum = y;
+		maxnum = x;
+	}
+	else
+	{
+		maxh = hy;
+		minh = hx;
+		minnum = x;
+		maxnum = y;
+	}
+	while (minh != maxh)	//当高度不同时，高度大的一方往小了找，直到相同
+	{
+		maxh--;
+		maxnum = b[maxnum];
+	}
+	//当双方高度相等以后
+	while (maxnum != minnum)
+	{
+		maxh--;
+		minh--;
+		minnum = b[minnum];
+		maxnum = b[maxnum];
+	}
+	//保证一定能找到共同的父亲
+	return minnum;
+}
+int main()
+{
+		int i = 0;
+		scanf("%d", &a[0]);
+		if (a[0] == 0)
+		{
+			exit(0);
+			return -1;
+		}
+		i++;	//根节点不为0
+		int cnt0 = 0, cntt = 1;
+		while (true)
+		{
+			scanf("%d", &a[i]);
+			if (a[i] == 0) cnt0++;
+			else cntt++;
+			if (cnt0 - 1 == cntt) break;
+			i++;
+		}
+		int T;
+		scanf("%d", &T);
+		TNode<int>* root = new TNode<int>;
+		root->left = nullptr;
+		root->right = nullptr;
+		root->father = nullptr;
+		root->data = a[0];
+		b[root->data] = 0;	//根节点父亲为0
+		c[root->data] = 0;	//根节点深度为0
+		d[root->data] = root;
+		int temp = -1;
+		CBT_int_Pre(a, i, root, temp, 0);  //此处建立树完毕，根节点为root
+		//b[data]指向其父亲的值
+		for (int Query = 1; Query <= T; Query++)
+		{
+			int x, y;
+			scanf("%d%d", &x, &y);	//寻找a到b的路径
+			//只需要先找到共同父节点，然后从a到该父节点
+			//再从b到该父节点值保存，倒序输出即可
+			int fa = findfather(x, y);
+			//printf("fater=%d\n", fa);
+			//fa为共同的父亲，现在只需求x到fa
+			TNode<int>* ptr = d[x];
+			int lenth = 0;
+			int f[5005] = { 0 };
+			while (ptr->data != fa)
+			{
+				f[lenth] = ptr->data;
+				lenth++;
+				ptr = ptr->father;
+			}
+			
+			//现在需要保存从y到fa的值，然后反序输出
+			ptr = d[y];
+			int cnt = 0;
+			int e[5005] = { 0 };
+			while (ptr->data != fa)
+			{
+				e[cnt] = ptr->data;
+				cnt++;
+				ptr = ptr->father;
+			}
+			printf("%d\n", lenth+cnt);
+			for (int j = 0; j < lenth; j++)
+				printf("%d ", f[j]);
+			printf("%d ", fa);
+			for (int j = cnt-1; j >= 0; j--)
+			{
+				printf("%d ", e[j]);
+			}
+			printf("\n");
+		}
+		
+}

@@ -1,0 +1,10 @@
+“鲜花商店”中的购买新培育鲜花
+1.main ownerBuy方法中部分代码
+	403行
+	flowerList = flowerStore.getFlowersBread();
+	415行
+	flowerOwner.FlowerOwnerbuy(flower);
+2.FlowerStoreServiceImpl getFlowersBread方法中部分代码
+	174行
+	List<Flower> flowerList = FlowerDao.selectFlower(sql, flowerParam);
+	return flowerList;

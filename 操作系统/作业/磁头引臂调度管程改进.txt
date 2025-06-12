@@ -1,0 +1,90 @@
+monitor DiskHeadScheduler;
+    var
+        busy: boolean;
+        headpos: 0..199;
+        direction: (up, down);
+        cylinder: array[0..199] of condition;
+        count: array[0..199] of integer;
+        upScanWaiting: boolean;
+        downScanWaiting: boolean;
+
+    procedure require(dest: 0..199);
+    begin
+        if busy then begin
+            count[dest] := count[dest] + 1;
+            wait(cylinder[dest]);
+        end;
+        busy := true;
+        if dest < headpos then
+            direction := down
+        else if dest > headpos then
+            direction := up;
+        headpos := dest;
+    end;
+
+    procedure upscan;
+    var i: 0..199;
+    begin
+        i := headpos;
+        while (i <= 199) and (count[i] = 0) do
+            i := i + 1;
+        if i <= 199 then begin
+            count[i] := count[i] - 1;
+            signal(cylinder[i]);
+            if upScanWaiting then exit;
+        end;
+        upScanWaiting := false;
+    end;
+
+    procedure downscan;
+    var i: 199 downto 0;
+    begin
+        i := headpos;
+        while (i >= 0) and (count[i] = 0) do
+            i := i - 1;
+        if i >= 0 then begin
+            count[i] := count[i] - 1;
+            signal(cylinder[i]);
+            if downScanWaiting then exit;
+        end;
+        downScanWaiting := false;
+    end;
+
+    procedure release;
+    begin
+        busy := false;
+        if direction = up then begin
+            upScanWaiting := true;
+            while (upScanWaiting) upscan;	//当向上有东西，就一直向上
+            if not upScanWaiting then //若向上扫描到199，已经没了
+				{
+					downScanWaiting := true;
+					downscan;
+				}
+        end
+        else begin
+            downScanWaiting := true;
+			while (downScanWaiting) downscan;
+            if not downScanWaiting then 	//若向下扫描到0，没有找到
+				{
+					upScanWaiting := true;
+					upscan;
+				}
+        end;
+    end;
+
+    procedure initialize;
+    var i: 0..199;
+    begin
+        busy := false;
+        headpos := 0;
+        direction := up;
+        for i := 0 to 199 do
+            count[i] := 0;
+        upScanWaiting := false;
+        downScanWaiting := false;
+    end;
+
+begin
+    initialize;
+end.

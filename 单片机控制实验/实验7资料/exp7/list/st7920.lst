@@ -1,0 +1,253 @@
+C51 COMPILER V7.08   ST7920                                                                11/27/2023 11:04:22 PAGE 1   
+
+
+C51 COMPILER V7.08, COMPILATION OF MODULE ST7920
+OBJECT MODULE PLACED IN .\output\st7920.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE user\st7920.c BROWSE INCDIR(D:\芮德华\EMCU\KEIL C51单片机实验(C语言版)\IO_I
+                    -NPUT\INCLUDE\) DEBUG OBJECTEXTEND PRINT(.\list\st7920.lst) OBJECT(.\output\st7920.obj)
+
+line level    source
+
+   1          //ST7920 LCD 驱动
+   2          #include <intrins.h>
+   3          #include "delay.h"
+   4          #include "st7920.h"
+   5          
+   6          //串口模式下的管脚对应：RS-CS(一般直接接电源),RW-SID,E-SCLK
+   7          sbit LCD_CS_PORT = P2^0;        //CS=RS
+   8          sbit LCD_SCLK_PORT = P2^1;  //SCLK=DE
+   9          sbit LCD_SID_PORT = P2^2;       //SID=WR
+  10          sbit LCD_RST_PORT = P2^3;       //RST
+  11          
+  12          //初始化
+  13          void LCD_init(void)
+  14          {                                                         
+  15   1              LCD_CS_PORT = 1;
+  16   1              LCD_RST_PORT = 0;
+  17   1          delay_ms(50);
+  18   1              LCD_RST_PORT = 1;
+  19   1      
+  20   1              
+  21   1          delay_ms(50);
+  22   1          LCD_write_command(0x30);
+  23   1          delay_ms(1);
+  24   1          LCD_write_command(0x0C);
+  25   1          delay_ms(1);
+  26   1          LCD_write_command(0x02);
+  27   1          delay_ms(1);
+  28   1          LCD_write_command(0x01);
+  29   1          delay_ms(1);
+  30   1      }
+  31          
+  32          //写命令
+  33          void LCD_write_command(unsigned char command)
+  34          {
+  35   1          LCD_SCLK_PORT = 0;
+  36   1          LCD2_spi_write_byte(0xf8);
+  37   1          _nop_();
+  38   1          LCD2_spi_write_byte_standard(command);
+  39   1      }
+  40          
+  41          //写数据
+  42          void LCD_write_data(unsigned char dat)
+  43          {
+  44   1          LCD_SCLK_PORT = 0;
+  45   1          LCD2_spi_write_byte(0xfa);
+  46   1          _nop_();
+  47   1          LCD2_spi_write_byte_standard(dat);
+  48   1      }
+  49          
+  50          //串行模式下写一个字节
+  51          void LCD2_spi_write_byte(unsigned char dat)
+  52          {
+  53   1          unsigned char i;
+  54   1          for(i=0; i<8; i++)
+C51 COMPILER V7.08   ST7920                                                                11/27/2023 11:04:22 PAGE 2   
+
+  55   1          {
+  56   2              if (dat & 0x80)
+  57   2                  LCD_SID_PORT = 1;
+  58   2              else
+  59   2                  LCD_SID_PORT = 0;
+  60   2      
+  61   2              _nop_();
+  62   2              _nop_();
+  63   2              LCD_SCLK_PORT = 0;
+  64   2              _nop_();
+  65   2              LCD_SCLK_PORT = 1;
+  66   2              dat <<= 1;
+  67   2          }
+  68   1      }
+  69          
+  70          //标准处理，一个字节要拆成两个字节发送
+  71          void LCD2_spi_write_byte_standard(unsigned char dat)
+  72          {
+  73   1          LCD2_spi_write_byte(dat & 0xf0);
+  74   1          LCD2_spi_write_byte((dat << 4) & 0xf0);
+  75   1      }
+  76          
+  77          //设置字符模式的地址
+  78          //第一行首地址：0x80
+  79          //第二行首地址：0x80+0x10 (0x90)
+  80          //第三行首地址：0x80+0x08 (0x88)
+  81          //第四行首地址：0x80+0x10+0x08 (0x98)
+  82          void LCD_set_text_address(unsigned int rowCol)
+  83          {
+  84   1          unsigned char start = 0x80;
+  85   1          unsigned char row = (rowCol >> 8) & 0xff;
+  86   1          unsigned char col = rowCol & 0xff;
+  87   1      
+  88   1          if (row == 1) {
+  89   2              start = 0x90;
+  90   2          }
+  91   1          if (row == 2) {
+  92   2              start = 0x88;
+  93   2          }
+  94   1          if (row == 3) {
+  95   2              start = 0x98;
+  96   2          }
+  97   1          LCD_write_command(start + col);
+  98   1      }
+  99          
+ 100          //将字符模式的行列号转换为内部的XY坐标，返回的高字节为X，低字节为Y
+ 101          //row (HIGH_BYTE(rowCol)): 行号，0-3
+ 102          //col (LOW_BYTE(rowCol)): 列号，0-7
+ 103          unsigned int LCD_rowCol_to_inter_Xy(unsigned int rowCol)
+ 104          {
+ 105   1          unsigned char row = (rowCol >> 8) & 0x03;
+ 106   1          unsigned char col = rowCol & 0x07;
+ 107   1          unsigned char x = col + 8 * (unsigned char)(row / 2);
+ 108   1          unsigned char y = (row * 16) & 0x1f;
+ 109   1          return (x << 8) | y;
+ 110   1      }
+ 111          
+ 112          //设置绘图模式的地址
+ 113          //x: 0-127 (注意x必须为16的整数倍)
+ 114          //y:0-63
+ 115          void LCD_set_graphic_address(unsigned char x, unsigned char y)
+ 116          {
+C51 COMPILER V7.08   ST7920                                                                11/27/2023 11:04:22 PAGE 3   
+
+ 117   1          unsigned char xWord, downPage, yInter;
+ 118   1      
+ 119   1          x &= 0x7f;
+ 120   1          y &= 0x3f;
+ 121   1          xWord = x / 16;           //内部X地址，一个地址管16位
+ 122   1          downPage = y / 32;        //0:上半屏 1:下半屏
+ 123   1          yInter = y & 0x1f;        //内部Y坐标
+ 124   1          
+ 125   1          LCD_write_command(0x80 + yInter); //先设置Y地址
+ 126   1          LCD_write_command(0x80 + xWord + 8 * downPage);
+ 127   1      }
+ 128          
+ 129          //显示清屏函数
+ 130          void LCD_clear(void)
+ 131          {
+ 132   1          unsigned char x, y;
+ 133   1          LCD_write_command(0x08);  //避免清屏过程中闪烁，先关显示
+ 134   1          delay_10us(10);
+ 135   1          LCD_write_command(0x01);  //清DDRAM
+ 136   1      
+ 137   1          //清GDRAM,12864仅用了一半的GDRAM，清一半即可
+ 138   1          //如果没有使用到绘图GDRAM，也可以不清GDRAM，省点时间和代码空间
+ 139   1          LCD_startGraphic();
+ 140   1          for (y = 0; y < 32; y++)
+ 141   1          {
+ 142   2              LCD_write_command(0x80 + y); //y
+ 143   2              LCD_write_command(0x80 + 0); //x
+ 144   2              for (x = 0; x < 16; x++)
+ 145   2              {
+ 146   3                  LCD_write_data(0x00);
+ 147   3                  LCD_write_data(0x00);
+ 148   3              }
+ 149   2          }
+ 150   1          LCD_endGraphic();
+ 151   1      
+ 152   1          LCD_write_command(0x0C);  //显示开
+ 153   1          delay_ms(10);
+ 154   1      }
+ 155          
+ 156          //开启扩展命令的绘图指令
+ 157          void LCD_startGraphic(void)
+ 158          {
+ 159   1          LCD_write_command(0x34);          //扩展指令集
+ 160   1          LCD_write_command(0x36);          //绘图命令开启
+ 161   1      }
+ 162          
+ 163          //结束扩展命令的绘图指令(可选)
+ 164          void LCD_endGraphic(void)
+ 165          {
+ 166   1          LCD_write_command(0x36); //绘图命令关闭
+ 167   1          LCD_write_command(0x30); //回到基本指令
+ 168   1      }
+ 169          
+ 170          //反白或取消反白对应16X16区域，一般用于菜单选择
+ 171          //row (HIGH_BYTE(rowCol)): 行号，0-3
+ 172          //col (LOW_BYTE(rowCol)): 列号，0-7
+ 173          //charNum: 要反白的字符数量，注意不要超过行末
+ 174          //ST7920内置的反白作用不大，它只能整行反白，而且反白第一行，第三行也会一起反白
+ 175          //所以此函数使用另外的方法实现：绘图区对应的位全部写0xff，异或后即可反白
+ 176          void LCD_Inverse_16X16(unsigned int rowCol, unsigned char charNum, unsigned char reverse)
+ 177          {
+ 178   1          unsigned char i, ch;
+C51 COMPILER V7.08   ST7920                                                                11/27/2023 11:04:22 PAGE 4   
+
+ 179   1          unsigned int xy = LCD_rowCol_to_inter_Xy(rowCol);
+ 180   1          unsigned char x = (xy >> 8) & 0xff;
+ 181   1          unsigned char y = xy & 0x3f;
+ 182   1      
+ 183   1          LCD_startGraphic();
+ 184   1          for (i = 0; i < 16; i++) //把对应字符的GDRAM全部写成0xff，异或后就是反白
+ 185   1          {
+ 186   2              LCD_write_command(0x80 + y + i);   //先写垂直地址y
+ 187   2              LCD_write_command(0x80 + x);       //x
+ 188   2              for (ch = 0; ch < charNum; ch++)
+ 189   2              {
+ 190   3                  LCD_write_data(reverse ? 0xff : 0x00);
+ 191   3                  LCD_write_data(reverse ? 0xff : 0x00);
+ 192   3              }
+ 193   2          }
+ 194   1          LCD_endGraphic();
+ 195   1      }
+ 196          
+ 197          //显示一个字符，12864可以显示4行，每行8个汉字或每行16个字母
+ 198          //col: 列号，0-15
+ 199          //row: 行号，0-3
+ 200          //字符编码：小于0x80的为ASCII，否则为汉字，汉字编码高字节在左边
+ 201          void LCD_write_char(unsigned int rowCol, unsigned int cod)
+ 202          {
+ 203   1          unsigned char high = (cod >> 8) & 0xff;
+ 204   1          unsigned char low = cod & 0xff;
+ 205   1          LCD_set_text_address(rowCol);
+ 206   1          if (cod > 0x80)
+ 207   1          {
+ 208   2              LCD_write_data(high);
+ 209   2          }
+ 210   1          LCD_write_data(low);
+ 211   1      }
+ 212          
+ 213          //显示一个字符串，注意不要超过一行的长度（8个汉字或16个字母）
+ 214          //rowCol: 左8位为行(0-3)，右8位为列(0-15)
+ 215          void LCD_write_string(unsigned int rowCol, const char * p)
+ 216          {
+ 217   1          LCD_set_text_address(rowCol);
+ 218   1          while (*p != 0)
+ 219   1          {
+ 220   2              LCD_write_data(*p);
+ 221   2              p++;
+ 222   2          }
+ 223   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    515    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      19
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

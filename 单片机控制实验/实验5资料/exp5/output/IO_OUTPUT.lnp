@@ -1,0 +1,6 @@
+".\output\main.obj",
+".\output\delay.obj",
+".\output\ch451.obj",
+".\output\ds18b20.obj" 
+TO ".\output\IO_OUTPUT" 
+PRINT(".\list\IO_OUTPUT.m51")

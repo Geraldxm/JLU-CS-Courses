@@ -1,0 +1,317 @@
+#include<iostream>
+#include<cmath>
+#include<string>
+using namespace std;
+//表达式求值。先将中缀表达式转换为后缀表达式，再将后缀表达式求值，
+//其中使用到堆栈
+long long quickPow(long long a, long long n,long long mod= 9223372036854775807)//计算a^n % mod
+{
+    long long re = 1;
+    if (a == 1) return 1;
+    if (a == 0 && n == 0) return 1;
+    if (a == 0 && n > 0) return 0;
+    while (n)
+    {
+        if (n & 1)//判断n的最后一位是否为1
+            re = (re * a) % mod;
+        n >>= 1;//舍去n的最后一位
+        a = (a * a) % mod;//将a平方
+    }
+    return re % mod;
+}
+template <typename T>
+class Node
+{
+public:
+	T data;
+	Node* nxt;
+};
+template <typename T>
+class myStack
+{
+private:
+	Node<T>* top;
+	Node<T>* bottom;
+	int length;		//记录栈内成员个数
+public:
+	//以下为实现代码
+	//构造函数
+	myStack()
+	{
+		bottom = new Node<T>;
+		top = bottom;
+		length = 0;
+	}
+	//析构函数
+	~myStack()
+	{
+		while (top != bottom)
+		{
+			Node<T>* p = bottom;
+			bottom = bottom->nxt;
+			delete p;
+		}
+		delete top;
+		top = nullptr;
+		bottom = nullptr;
+	}
+	//拷贝构造函数
+	myStack(const myStack& o) = delete;
+	//赋值构造函数
+	myStack& operator=(const myStack& o) = delete;
+	//下面为其他成员函数
+	bool isEmpty()
+	{
+		if (length == 0) return true;
+		else return false;
+	}
+	void clear()
+	{
+		while (top != bottom)
+		{
+			Node<T>* p = bottom;
+			bottom = bottom->nxt;
+			delete p;
+		}
+		delete top;
+		bottom = new Node<T>;
+		top = bottom;
+		length = 0;
+	}
+	void push(const T x)
+	{
+		Node<T>* p = new Node<T>;
+		p->data = x;
+		p->nxt = nullptr;
+		top->nxt = p;
+		top = p;
+		length++;
+	}
+	T pop()
+	{
+		Node<T>* p = bottom;
+		if (this->isEmpty())
+		{
+			cout << "空栈，无法pop\n" << endl;
+			exit(0);
+		}
+		else
+		{
+			while (p->nxt != top)
+				p = p->nxt;
+		}
+		p->nxt = nullptr;
+		Node<T>* q = top;
+		T temp = q->data;
+		delete q;
+		top = p;
+		length--;
+		return temp;
+	}
+	int getLength()
+	{
+		return this->length;
+	}
+	T getTop()
+	{
+		return top->data;
+	}
+	T getBottom()
+	{
+		return bottom->data;
+	}
+};
+int isBigger(char x, char y);
+void M2P(string& str, string& pstr);
+long long calc(string& pstr);
+bool isNumber(char ch);
+int isOP(char ch);
+long long rechieval(string& pstr, int &i);
+//声明全局的栈
+myStack<char> op;
+myStack<long long> num;
+int main()
+{
+	string str;
+	while (getline(cin,str))
+	{
+		//cout << str << endl;
+		string pstr;
+		M2P(str, pstr);
+		num.clear();
+		op.clear();
+		//cout << pstr << endl;
+		calc(pstr);
+	}
+}
+long long calc(string& pstr)
+{
+	int lenpstr = pstr.length();
+	int i = 0;
+	long long t = 0;
+	while (i < lenpstr)
+	{
+		//当为数字时，处理数字
+		while (isNumber(pstr[i]))
+		{
+			t = rechieval(pstr, i);
+			num.push(t);
+			//cout << "push number t=" << t << endl;
+		}
+		//遇到了操作符
+		if (pstr[i] == '+')
+		{
+			long long x = num.pop();
+			long long y = num.pop();
+			num.push(x + y);
+			i++;
+		}
+		else if (pstr[i] == '-')
+		{
+			long long x = num.pop();
+			long long y = num.pop();
+			num.push(y - x);
+			i++;
+		}
+		else if (pstr[i] == '*')
+		{
+			long long x = num.pop();
+			long long y = num.pop();
+			num.push(x * y);
+			i++;
+		}
+		else if (pstr[i] == '/')
+		{
+			long long x = num.pop();
+			long long y = num.pop();
+			if (x == 0)
+			{
+				printf("INVALID\n");
+				return 0;
+			}
+			num.push(y / x);
+			i++;
+		}
+		else if (pstr[i] == '^')
+		{
+			long long x = num.pop();
+			long long y = num.pop();
+			num.push(quickPow(y, x));
+			i++;
+		}
+	}
+	printf("%lld\n", num.pop());
+	return 0;
+}
+long long rechieval(string& pstr, int &i)
+{
+	long long x = 0;
+	while (pstr[i] != '#')
+	{
+		x = x * 10 + pstr[i] - '0';
+		i++;
+	}
+	i++;
+	return x;
+}
+void M2P(string& str, string& pstr)
+{
+	int lenstr = str.length();
+	pstr = "";	//初始化后缀表达式
+	for (int i = 0; i < lenstr; i++)
+	{
+		//cout << pstr << endl;
+		//数字的情况
+		if (isNumber(str[i]))
+		{
+			//cout << "isNumber" << endl;
+			pstr = pstr + str[i];
+			if (i + 1 == lenstr || !isNumber(str[i + 1]))//若已经到尾部，或者下一个不是数字
+				pstr = pstr + '#';
+			continue;
+			//cout << pstr << endl;
+		}
+		//普通运算符的情况
+		if (isOP(str[i]) == 0)
+		{
+			//cout << "isOP" << endl;
+			//cout << "isEmpty" << op.isEmpty() << endl;
+			if (op.isEmpty()) op.push(str[i]);//若空，直接入栈
+			else
+			{
+				char opch = op.getTop();
+				if (isBigger(str[i], opch) == 1 || opch=='(')
+				{
+					op.push(str[i]);
+					continue;
+				}
+				else
+				{
+					pstr = pstr + opch;
+					op.pop();
+					op.push(str[i]);
+				}
+			}
+			//cout << pstr << endl;
+			continue;
+		}
+		//以下为()的情况
+		if (isOP(str[i]) == 1)
+		{
+			if (str[i] == '(')
+			{
+				op.push(str[i]);
+				continue;
+			}
+			else
+			{	//为 ) 的情况
+				char opch = op.pop();
+				while (opch != '(')
+				{
+					pstr = pstr + opch;
+					opch = op.pop();
+				}
+			}
+			continue;
+			//cout << pstr << endl;
+		}
+	}
+	while (!op.isEmpty())
+	{
+		pstr = pstr + op.pop();
+	}
+	//若当前字符为运算符，判断其与栈顶运算符的优先级，若其优先级大于栈顶的，则入栈
+	//若小于等于，则弹出栈顶运算符放入表达式，将当前运算符入栈
+	//遇到左括号入栈，遇到右括号，则弹出直到遇到左括号
+}
+bool isNumber(char ch)
+{
+	if (ch <= '9' && ch >= '0') return true;
+	else return false;
+}
+int isOP(char ch)
+{
+	if (ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '^') return 0;
+	if (ch == '(' || ch == ')') return 1;
+	return -1;
+}
+int isBigger(char x, char y)
+{
+	//表达式中有+ - * / ^ ( )
+	if (x == '+' || x == '-')
+	{
+		if (y == '-' || y == '+') return 0;
+		if (y == '*' || y == '/' || y == '^') return -1;
+	}
+	if (x == '*' || x == '/')
+	{
+		if (y == '+' || y == '-') return 1;
+		if (y == '*' || y == '/') return 0;
+		if (y == '^') return -1;
+	}
+	if (x == '^')
+	{
+		if (y == '^') return 0;
+		else return 1;
+	}
+}
